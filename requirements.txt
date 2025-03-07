@@ -1,5 +1,6 @@
 # Dependências principais
 flask==3.0.2
+faker
 flask-socketio==5.3.6
 flask-cors==4.0.0
 selenium==4.18.1
