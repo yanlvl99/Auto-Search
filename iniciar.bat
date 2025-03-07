@@ -29,11 +29,7 @@ call %VENV_NAME%\Scripts\activate
 
 :: Verifica e instala/atualiza dependências
 echo Verificando dependências...
-pip install -r requirements.txt
-
-:: Mata processos do Edge que possam estar rodando
-echo Verificando processos do Edge...
-taskkill /F /IM msedge.exe >nul 2>&1
+python -m pip install -r requirements.txt
 
 :: Inicia a aplicação
 echo Iniciando Auto Search...
