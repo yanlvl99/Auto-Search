@@ -1,0 +1,9 @@
+# Dependências principais
+flask==3.0.2
+flask-socketio==5.3.6
+flask-cors==4.0.0
+selenium==4.18.1
+webdriver-manager==4.0.1
+python-dotenv==1.0.1
+eventlet==0.35.2
+gevent-websocket==0.10.1

@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Search - Automação Bing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Poppins', 'sans-serif'],
+                    },
+                    animation: {
+                        'gradient': 'gradient 8s linear infinite',
+                        'slide-up': 'slide-up 0.5s ease-out',
+                        'fade-in': 'fade-in 0.3s ease-out',
+                        'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': {
+                                'background-position': '0% 50%'
+                            },
+                            '50%': {
+                                'background-position': '100% 50%'
+                            }
+                        },
+                        'slide-up': {
+                            '0%': {
+                                transform: 'translateY(20px)',
+                                opacity: '0'
+                            },
+                            '100%': {
+                                transform: 'translateY(0)',
+                                opacity: '1'
+                            }
+                        },
+                        'fade-in': {
+                            '0%': {
+                                opacity: '0'
+                            },
+                            '100%': {
+                                opacity: '1'
+                            }
+                        },
+                        'bounce-subtle': {
+                            '0%, 100%': {
+                                transform: 'translateY(-2px)'
+                            },
+                            '50%': {
+                                transform: 'translateY(2px)'
+                            }
+                        },
+                        'float': {
+                            '0%, 100%': {
+                                transform: 'translateY(0)'
+                            },
+                            '50%': {
+                                transform: 'translateY(-10px)'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Animações */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Classes Base */
+        .gradient-bg {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #1b2a4a, #162447);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .glass-card {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        /* Títulos e Textos */
+        .config-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1.75rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-title::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 1.25rem;
+            background: var(--accent-color);
+            border-radius: 2px;
+            margin-right: 0.5rem;
+        }
+
+        label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Campos de Formulário */
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.3);
+        }
+
+        .select-field {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.95rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem;
+        }
+
+        .select-field:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.3);
+        }
+
+        .select-field option {
+            background-color: #1a1a2e;
+            color: white;
+            padding: 0.75rem;
+        }
+
+        /* Botões */
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Logs */
+        #logs {
+            height: 300px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.5rem;
+            color: white;
+        }
+
+        .log-entry {
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .log-entry.info {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry.success {
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .log-entry.warning {
+            background: rgba(255, 152, 0, 0.2);
+        }
+
+        .log-entry.error {
+            background: rgba(244, 67, 54, 0.2);
+        }
+
+        .timestamp {
+            color: rgba(255, 255, 255, 0.5);
+            margin-right: 0.5rem;
+        }
+
+        /* Checkbox personalizado */
+        input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.25rem;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="checkbox"]:checked {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        input[type="checkbox"]:checked::before {
+            content: '✓';
+            display: block;
+            text-align: center;
+            color: white;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Temas */
+        .theme-default {
+            --primary-gradient: linear-gradient(-45deg, #1a1a2e, #16213e, #1b2a4a, #162447);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: white;
+            --accent-color: #4CAF50;
+        }
+
+        .theme-purple {
+            --primary-gradient: linear-gradient(-45deg, #2d1b4e, #442b72, #553592, #4c2885);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: white;
+            --accent-color: #9c27b0;
+        }
+
+        .theme-green {
+            --primary-gradient: linear-gradient(-45deg, #004d40, #00695c, #00796b, #00897b);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: white;
+            --accent-color: #4CAF50;
+        }
+
+        .theme-red {
+            --primary-gradient: linear-gradient(-45deg, #b71c1c, #c62828, #d32f2f, #e53935);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: white;
+            --accent-color: #f44336;
+        }
+
+        .theme-ocean {
+            --primary-gradient: linear-gradient(-45deg, #006064, #00838f, #0097a7, #00acc1);
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --text-color: white;
+            --accent-color: #00bcd4;
+        }
+
+        /* Estilos de Card */
+        .card-glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+        }
+
+        .card-solid {
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+        }
+
+        .card-gradient {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.05)
+            );
+            border: none;
+        }
+
+        .card-minimal {
+            background: none;
+            border: 1px solid var(--card-border);
+            box-shadow: none;
+        }
+
+        /* Animações */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .animate-float {
+            animation: float calc(6s * var(--animation-speed)) ease-in-out infinite;
+        }
+
+        .animate-pulse {
+            animation: pulse calc(2s * var(--animation-speed)) ease-in-out infinite;
+        }
+
+        .animate-shimmer {
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            background-size: 200% 100%;
+            animation: shimmer calc(3s * var(--animation-speed)) infinite linear;
+        }
+
+        /* Partículas */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Transições */
+        .transitions-enabled * {
+            transition: all 0.3s ease;
+        }
+
+        /* Botões com novos efeitos */
+        .btn-primary {
+            background: linear-gradient(45deg, var(--accent-color), color-mix(in srgb, var(--accent-color) 80%, white));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.3s;
+        }
+
+        .btn-primary:hover::after {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* Efeitos de hover melhorados */
+        .glass-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .glass-card:hover::before {
+            left: 100%;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: color-mix(in srgb, var(--accent-color) 80%, white);
+        }
+
+        /* Inputs com efeitos de foco */
+        .input-field:focus,
+        .select-field:focus {
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        /* Checkbox personalizado */
+        input[type="checkbox"]:checked {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Status com animação */
+        #statusIndicator {
+            position: relative;
+        }
+
+        #statusIndicator::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+
+        /* Logs com efeitos */
+        .log-entry {
+            border-left: 3px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .log-entry:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Efeito de loading */
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            animation: shimmer 1.5s infinite;
+        }
+
+        #customizationSidebar.open {
+            transform: translateX(0);
+        }
+        
+        .sticky {
+            position: sticky;
+            top: 1.5rem;
+        }
+
+        /* Melhorias no Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .grid-cols-3 {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        /* Cabeçalho */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Sidebar */
+        #customizationSidebar {
+            position: fixed;
+            top: 0;
+            right: -320px; /* Começa fora da tela */
+            height: 100vh;
+            width: 320px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        #customizationSidebar.open {
+            transform: translateX(-320px);
+        }
+
+        #toggleSidebar {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+
+        #toggleSidebar:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.05);
+        }
+
+        #toggleSidebar svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: white;
+            transition: transform 0.3s ease;
+        }
+
+        #customizationSidebar.open + #toggleSidebar svg {
+            transform: rotate(180deg);
+        }
+
+        /* Estilos para os elementos dentro do sidebar */
+        #customizationSidebar h3 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #customizationSidebar .select-field {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        #customizationSidebar .select-field:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.3);
+        }
+
+        #customizationSidebar label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        #customizationSidebar .space-y-6 > div {
+            margin-bottom: 2rem;
+        }
+
+        #customizationSidebar .space-y-2 {
+            margin-top: 1rem;
+        }
+
+        /* Variáveis de Animação */
+        :root {
+            --animation-speed: 1;
+        }
+
+        /* Efeitos de Hover */
+        .hover\:scale-105:hover {
+            transform: scale(1.05);
+            transition: transform 0.3s ease;
+        }
+
+        .hover\:glow:hover {
+            box-shadow: 0 0 20px var(--accent-color);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .hover\:tilt:hover {
+            transform: perspective(1000px) rotateX(2deg) rotateY(2deg);
+            transition: transform 0.3s ease;
+        }
+
+        /* Ajustes para o Status e Logs */
+        .glass-card.sticky {
+            backdrop-filter: blur(15px);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        #logs {
+            font-family: 'Fira Code', monospace;
+            line-height: 1.5;
+            padding-right: 0.5rem;
+        }
+
+        .log-entry {
+            transition: all 0.3s ease;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+
+<body class="gradient-bg">
+    <!-- Sidebar de Personalização -->
+    <div id="customizationSidebar">
+        <h3>Personalização</h3>
+        
+        <!-- Tema -->
+        <div class="space-y-4">
+            <div>
+                <label class="block mb-2">Tema</label>
+                <select name="theme" id="theme" class="select-field">
+                    <option value="default">Padrão (Azul Escuro)</option>
+                    <option value="purple">Roxo Profundo</option>
+                    <option value="green">Verde Esmeralda</option>
+                    <option value="red">Vermelho Rubi</option>
+                    <option value="ocean">Oceano</option>
+                </select>
+            </div>
+
+            <!-- Estilo do Card -->
+            <div>
+                <label class="block mb-2">Estilo do Card</label>
+                <select name="cardStyle" id="cardStyle" class="select-field">
+                    <option value="glass">Vidro (Glass)</option>
+                    <option value="solid">Sólido</option>
+                    <option value="gradient">Gradiente</option>
+                    <option value="minimal">Minimalista</option>
+                </select>
+            </div>
+
+            <!-- Efeitos -->
+            <div>
+                <label class="block mb-2">Efeitos Visuais</label>
+                <div class="space-y-4">
+                    <!-- Efeitos Básicos -->
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enableTransitions" name="enableTransitions" checked>
+                            <label class="ml-2">Transições Suaves</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enableParticles" name="enableParticles" checked>
+                            <label class="ml-2">Partículas de Fundo</label>
+                        </div>
+                    </div>
+
+                    <!-- Animações dos Cards -->
+                    <div>
+                        <label class="block mb-2 text-sm">Animação dos Cards</label>
+                        <select name="cardAnimation" id="cardAnimation" class="select-field">
+                            <option value="none">Sem Animação</option>
+                            <option value="float" selected>Flutuante</option>
+                            <option value="pulse">Pulsante</option>
+                            <option value="shimmer">Brilhante</option>
+                        </select>
+                    </div>
+
+                    <!-- Intensidade das Partículas -->
+                    <div>
+                        <label class="block mb-2 text-sm">Densidade das Partículas</label>
+                        <select name="particleDensity" id="particleDensity" class="select-field">
+                            <option value="low">Baixa</option>
+                            <option value="medium" selected>Média</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+
+                    <!-- Velocidade das Animações -->
+                    <div>
+                        <label class="block mb-2 text-sm">Velocidade das Animações</label>
+                        <select name="animationSpeed" id="animationSpeed" class="select-field">
+                            <option value="slow">Lenta</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="fast">Rápida</option>
+                        </select>
+                    </div>
+
+                    <!-- Efeitos de Hover -->
+                    <div>
+                        <label class="block mb-2 text-sm">Efeitos ao Passar o Mouse</label>
+                        <select name="hoverEffect" id="hoverEffect" class="select-field">
+                            <option value="none">Sem Efeito</option>
+                            <option value="scale" selected>Escala</option>
+                            <option value="glow">Brilho</option>
+                            <option value="tilt">Inclinação</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="toggleSidebar" class="fixed">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+    </button>
+
+    <!-- Conteúdo Principal -->
+    <div class="container mx-auto">
+        <!-- Cabeçalho -->
+        <header class="text-center mb-12 p-8 rounded-2xl bg-black/20 backdrop-blur">
+            <h1 class="text-4xl font-display font-bold mb-4 text-white animate-float">
+                Auto Search - Automação Bing
+            </h1>
+            <div class="flex justify-center space-x-4">
+                <button id="refreshProfiles" class="btn-secondary group">
+                    <svg class="w-5 h-5 inline-block mr-2 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Atualizar Perfis
+                </button>
+            </div>
+        </header>
+
+        <!-- Grid Principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Coluna da Esquerda: Configurações -->
+            <div class="lg:col-span-2 space-y-8">
+                <form id="automationForm" class="space-y-8">
+                    <!-- Configurações Básicas -->
+                    <div class="glass-card">
+                        <h2 class="config-title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                            </svg>
+                            Configurações Básicas
+                        </h2>
+                        <div class="grid gap-4">
+                            <div>
+                                <label class="block mb-2 text-white">Perfil Edge</label>
+                                <select name="profile" id="profile" class="select-field" required>
+                                    <option value="">Selecione um perfil</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block mb-2 text-white">Tipo de Dispositivo</label>
+                                    <select name="deviceType" id="deviceType" class="select-field" required>
+                                        <option value="desktop">Desktop</option>
+                                        <option value="mobile">Mobile</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-white">Número de Pesquisas</label>
+                                    <input type="number" name="searchCount" id="searchCount" min="1" max="100" 
+                                        value="30" class="input-field" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações de Comportamento -->
+                    <div class="glass-card">
+                        <h2 class="config-title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Comportamento da Automação
+                        </h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block mb-2 text-white">Velocidade de Digitação</label>
+                                <select name="typingSpeed" id="typingSpeed" class="select-field">
+                                    <option value="instant">Instantânea</option>
+                                    <option value="fast">Rápida</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="slow">Lenta</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block mb-2 text-white">Intervalo entre Pesquisas (segundos)</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="number" name="minInterval" id="minInterval" 
+                                        min="1" max="60" value="2" class="input-field" 
+                                        placeholder="Mínimo">
+                                    <input type="number" name="maxInterval" id="maxInterval" 
+                                        min="1" max="60" value="5" class="input-field" 
+                                        placeholder="Máximo">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Agents -->
+                    <div class="glass-card">
+                        <h2 class="config-title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            User Agents
+                        </h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block mb-2 text-white">Desktop</label>
+                                <select name="desktopUserAgent" id="desktopUserAgent" class="select-field">
+                                    <option value="default">Padrão do Edge</option>
+                                    <option value="windows">Windows 11 - Edge</option>
+                                    <option value="mac">MacOS - Edge</option>
+                                    <option value="linux">Linux - Edge</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block mb-2 text-white">Mobile</label>
+                                <select name="mobileUserAgent" id="mobileUserAgent" class="select-field">
+                                    <option value="default">Padrão do Edge Mobile</option>
+                                    <option value="android">Android - Edge</option>
+                                    <option value="ios">iOS - Edge</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações Avançadas -->
+                    <div class="glass-card">
+                        <h2 class="config-title">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                            </svg>
+                            Configurações Avançadas
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="clickResults" name="clickResults">
+                                <label class="ml-2 text-white">Clicar em Resultados</label>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4" id="clickSettings" style="display: none;">
+                                <div>
+                                    <label class="block mb-2 text-white">Número de Cliques</label>
+                                    <input type="number" name="clickCount" id="clickCount" 
+                                        min="1" max="5" value="2" class="input-field">
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-white">Tempo de Leitura (s)</label>
+                                    <input type="number" name="readTime" id="readTime" 
+                                        min="5" max="30" value="10" class="input-field">
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4">
+                                <input type="checkbox" id="randomScroll" name="randomScroll">
+                                <label class="ml-2 text-white">Scroll Aleatório</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Controle -->
+                    <div class="flex justify-center space-x-6">
+                        <button type="submit" id="startButton" class="btn-primary text-lg px-8 py-4">
+                            <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Iniciar Automação
+                        </button>
+                        <button type="button" id="stopButton" class="btn-secondary text-lg px-8 py-4" disabled>
+                            <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                            </svg>
+                            Parar Automação
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Coluna da Direita: Status e Logs -->
+            <div class="space-y-8">
+                <!-- Card combinado de Status e Logs -->
+                <div class="glass-card sticky top-6 flex flex-col h-[calc(100vh-8rem)]">
+                    <!-- Status Section -->
+                    <div class="border-b border-white/10 pb-4 mb-4">
+                        <h2 class="config-title flex items-center mb-2">
+                            <span>Status</span>
+                            <span id="statusIndicator" class="ml-2 w-3 h-3 rounded-full bg-gray-400"></span>
+                        </h2>
+                        <p id="statusText" class="text-white opacity-70">Aguardando início...</p>
+                    </div>
+
+                    <!-- Logs Section -->
+                    <div class="flex-1 flex flex-col min-h-0">
+                        <h2 class="config-title mb-2">Logs</h2>
+                        <div id="logs" class="flex-1 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do WebSocket
+        const socket = io();
+        let isConnected = false;
+        let isRunning = false;
+
+        // Elementos da Interface
+        // Elementos do DOM
+        const form = document.getElementById('automationForm');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const logsDiv = document.getElementById('logs');
+        const clickResults = document.getElementById('clickResults');
+        const clickSettings = document.getElementById('clickSettings');
+
+        // Atualizar perfis
+        document.getElementById('refreshProfiles').addEventListener('click', () => {
+            addLog('Atualizando lista de perfis...');
+            socket.emit('refresh_profiles');
+        });
+
+        // Toggle configurações de clique
+        clickResults.addEventListener('change', (e) => {
+            clickSettings.style.display = e.target.checked ? 'grid' : 'none';
+        });
+
+        // Manipulação do formulário
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!isRunning) {
+                const formData = new FormData(form);
+                const profile = formData.get('profile');
+                
+                if (!profile) {
+                    addLog('Erro: Selecione um perfil primeiro');
+                    return;
+                }
+                
+                const config = {
+                    profile: profile,
+                    deviceType: formData.get('deviceType'),
+                    searchCount: parseInt(formData.get('searchCount')),
+                    typingSpeed: formData.get('typingSpeed'),
+                    minInterval: parseInt(formData.get('minInterval')),
+                    maxInterval: parseInt(formData.get('maxInterval')),
+                    clickResults: formData.get('clickResults') === 'on',
+                    clickCount: parseInt(formData.get('clickCount') || '2'),
+                    readTime: parseInt(formData.get('readTime') || '10'),
+                    randomScroll: formData.get('randomScroll') === 'on',
+                    desktopUserAgent: formData.get('desktopUserAgent'),
+                    mobileUserAgent: formData.get('mobileUserAgent'),
+                    theme: formData.get('theme'),
+                    cardStyle: formData.get('cardStyle'),
+                    enableTransitions: formData.get('enableTransitions') === 'on',
+                    enableParticles: formData.get('enableParticles') === 'on'
+                };
+
+                // Validações
+                if (config.minInterval >= config.maxInterval) {
+                    addLog('Erro: Intervalo mínimo deve ser menor que o máximo');
+                    return;
+                }
+
+                if (config.searchCount < 1 || config.searchCount > 100) {
+                    addLog('Erro: Número de pesquisas deve estar entre 1 e 100');
+                    return;
+                }
+
+                addLog('Iniciando automação...');
+                socket.emit('start_automation', config);
+            }
+        });
+
+        // Parar automação
+        stopButton.addEventListener('click', () => {
+            if (isRunning) {
+                addLog('Parando automação...');
+                socket.emit('stop_automation');
+            }
+        });
+
+        // Eventos do Socket
+        socket.on('connect', () => {
+            addLog('Conectado ao servidor');
+            socket.emit('refresh_profiles');
+        });
+
+        socket.on('disconnect', () => {
+            addLog('Desconectado do servidor');
+            isRunning = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            statusIndicator.className = 'ml-2 w-3 h-3 rounded-full bg-red-500';
+            statusText.textContent = 'Desconectado';
+        });
+
+        socket.on('profiles_updated', (profiles) => {
+            const profileSelect = document.getElementById('profile');
+            profileSelect.innerHTML = '<option value="">Selecione um perfil</option>';
+            
+            if (Array.isArray(profiles) && profiles.length > 0) {
+                profiles.forEach(profile => {
+                    const option = document.createElement('option');
+                    option.value = profile.path;
+                    option.textContent = profile.name;
+                    profileSelect.appendChild(option);
+                });
+                addLog(`${profiles.length} perfis encontrados`);
+            } else {
+                addLog('Nenhum perfil encontrado');
+            }
+        });
+
+        socket.on('automation_started', () => {
+            isRunning = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            statusIndicator.className = 'ml-2 w-3 h-3 rounded-full bg-green-500';
+            statusText.textContent = 'Automação em execução';
+            addLog('Automação iniciada');
+        });
+
+        socket.on('automation_stopped', () => {
+            isRunning = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            statusIndicator.className = 'ml-2 w-3 h-3 rounded-full bg-gray-400';
+            statusText.textContent = 'Automação parada';
+            addLog('Automação parada');
+        });
+
+        socket.on('log', (message) => {
+            addLog(message);
+        });
+
+        function addLog(message) {
+            const log = document.createElement('div');
+            log.className = 'log-entry animate-fade-in py-1';
+            log.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(log);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            // Limita o número de logs para evitar consumo excessivo de memória
+            while (logsDiv.children.length > 100) {
+                logsDiv.removeChild(logsDiv.firstChild);
+            }
+        }
+
+        // Tema escuro
+        const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', darkMode);
+
+        // Configuração das Partículas
+        const particlesConfig = {
+            particles: {
+                number: {
+                    value: 50,
+                    density: {
+                        enable: true,
+                        value_area: 800
+                    }
+                },
+                color: {
+                    value: "#ffffff"
+                },
+                shape: {
+                    type: "circle"
+                },
+                opacity: {
+                    value: 0.1,
+                    random: true
+                },
+                size: {
+                    value: 3,
+                    random: true
+                },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#ffffff",
+                    opacity: 0.1,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 1,
+                    direction: "none",
+                    random: true,
+                    straight: false,
+                    out_mode: "out",
+                    bounce: false
+                }
+            },
+            interactivity: {
+                detect_on: "canvas",
+                events: {
+                    onhover: {
+                        enable: true,
+                        mode: "grab"
+                    },
+                    resize: true
+                },
+                modes: {
+                    grab: {
+                        distance: 140,
+                        line_linked: {
+                            opacity: 0.3
+                        }
+                    }
+                }
+            }
+        };
+
+        // Gerenciamento de Tema
+        const themeManager = {
+            themes: {
+                default: {
+                    gradient: 'linear-gradient(-45deg, #1a1a2e, #16213e, #1b2a4a, #162447)',
+                    accent: '#4CAF50'
+                },
+                purple: {
+                    gradient: 'linear-gradient(-45deg, #2d1b4e, #442b72, #553592, #4c2885)',
+                    accent: '#9c27b0'
+                },
+                green: {
+                    gradient: 'linear-gradient(-45deg, #004d40, #00695c, #00796b, #00897b)',
+                    accent: '#4CAF50'
+                },
+                red: {
+                    gradient: 'linear-gradient(-45deg, #b71c1c, #c62828, #d32f2f, #e53935)',
+                    accent: '#f44336'
+                },
+                ocean: {
+                    gradient: 'linear-gradient(-45deg, #006064, #00838f, #0097a7, #00acc1)',
+                    accent: '#00bcd4'
+                }
+            },
+
+            cardStyles: {
+                glass: {
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                },
+                solid: {
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    backdropFilter: 'none',
+                    border: 'none'
+                },
+                gradient: {
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))',
+                    backdropFilter: 'blur(5px)',
+                    border: 'none'
+                },
+                minimal: {
+                    background: 'none',
+                    backdropFilter: 'none',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                }
+            },
+
+            init() {
+                this.themeSelect = document.getElementById('theme');
+                this.cardStyleSelect = document.getElementById('cardStyle');
+                this.enableTransitions = document.getElementById('enableTransitions');
+                this.enableParticles = document.getElementById('enableParticles');
+                
+                this.themeSelect.addEventListener('change', () => this.applyTheme());
+                this.cardStyleSelect.addEventListener('change', () => this.applyCardStyle());
+                this.enableTransitions.addEventListener('change', () => this.toggleTransitions());
+                this.enableParticles.addEventListener('change', () => this.toggleParticles());
+                
+                // Aplicar configurações iniciais
+                this.applyTheme();
+                this.applyCardStyle();
+                this.initParticles();
+            },
+
+            applyTheme() {
+                const theme = this.themes[this.themeSelect.value];
+                document.documentElement.style.setProperty('--primary-gradient', theme.gradient);
+                document.documentElement.style.setProperty('--accent-color', theme.accent);
+                document.body.style.background = theme.gradient;
+                document.body.style.backgroundSize = '400% 400%';
+            },
+
+            applyCardStyle() {
+                const style = this.cardStyles[this.cardStyleSelect.value];
+                const cards = document.querySelectorAll('.glass-card');
+                cards.forEach(card => {
+                    Object.assign(card.style, style);
+                });
+            },
+
+            toggleTransitions() {
+                document.body.classList.toggle('transitions-enabled', this.enableTransitions.checked);
+            },
+
+            toggleParticles() {
+                const particlesContainer = document.getElementById('particles-js');
+                if (this.enableParticles.checked) {
+                    particlesContainer.style.display = 'block';
+                } else {
+                    particlesContainer.style.display = 'none';
+                }
+            },
+
+            initParticles() {
+                const container = document.createElement('div');
+                container.id = 'particles-js';
+                document.body.prepend(container);
+                particlesJS('particles-js', particlesConfig);
+            }
+        };
+
+        // User Agents
+        const userAgents = {
+            desktop: {
+                default: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                windows: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                mac: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+                linux: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+            },
+            mobile: {
+                default: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 EdgA/120.0.0.0",
+                android: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 EdgA/120.0.0.0",
+                ios: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 EdgiOS/120.0.0.0 Mobile/15E148 Safari/605.1.15"
+            }
+        };
+
+        // Efeitos
+        const effectsManager = {
+            particleDensities: {
+                low: 30,
+                medium: 50,
+                high: 80
+            },
+            
+            animationSpeeds: {
+                slow: 1.5,
+                normal: 1,
+                fast: 0.5
+            },
+            
+            init() {
+                this.cardAnimation = document.getElementById('cardAnimation');
+                this.particleDensity = document.getElementById('particleDensity');
+                this.animationSpeed = document.getElementById('animationSpeed');
+                this.hoverEffect = document.getElementById('hoverEffect');
+                
+                this.cardAnimation.addEventListener('change', () => this.updateCardAnimations());
+                this.particleDensity.addEventListener('change', () => this.updateParticles());
+                this.animationSpeed.addEventListener('change', () => this.updateAnimationSpeed());
+                this.hoverEffect.addEventListener('change', () => this.updateHoverEffects());
+                
+                // Aplicar configurações iniciais
+                this.updateCardAnimations();
+                this.updateParticles();
+                this.updateAnimationSpeed();
+                this.updateHoverEffects();
+            },
+            
+            updateCardAnimations() {
+                const cards = document.querySelectorAll('.glass-card');
+                cards.forEach(card => {
+                    card.classList.remove('animate-float', 'animate-pulse', 'animate-shimmer');
+                    if (this.cardAnimation.value !== 'none') {
+                        card.classList.add(`animate-${this.cardAnimation.value}`);
+                    }
+                });
+            },
+            
+            updateParticles() {
+                if (window.pJSDom && window.pJSDom[0]) {
+                    const density = this.particleDensities[this.particleDensity.value];
+                    window.pJSDom[0].pJS.particles.number.value = density;
+                    window.pJSDom[0].pJS.fn.particlesRefresh();
+                }
+            },
+            
+            updateAnimationSpeed() {
+                const speed = this.animationSpeeds[this.animationSpeed.value];
+                document.documentElement.style.setProperty('--animation-speed', speed);
+            },
+            
+            updateHoverEffects() {
+                const cards = document.querySelectorAll('.glass-card');
+                cards.forEach(card => {
+                    card.classList.remove('hover:scale-105', 'hover:glow', 'hover:tilt');
+                    switch (this.hoverEffect.value) {
+                        case 'scale':
+                            card.classList.add('hover:scale-105');
+                            break;
+                        case 'glow':
+                            card.classList.add('hover:glow');
+                            break;
+                        case 'tilt':
+                            card.classList.add('hover:tilt');
+                            break;
+                    }
+                });
+            }
+        };
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            themeManager.init();
+            effectsManager.init();
+            
+            // Configurar animações dos cards
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach(card => {
+                card.classList.add('animate-float');
+            });
+
+            // Configurar efeito de hover nos botões
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', () => {
+                    button.classList.add('animate-pulse');
+                });
+                button.addEventListener('mouseleave', () => {
+                    button.classList.remove('animate-pulse');
+                });
+            });
+
+            // Salvar preferências no localStorage
+            const savePreferences = () => {
+                const preferences = {
+                    theme: document.getElementById('theme').value,
+                    cardStyle: document.getElementById('cardStyle').value,
+                    enableTransitions: document.getElementById('enableTransitions').checked,
+                    enableParticles: document.getElementById('enableParticles').checked
+                };
+                localStorage.setItem('preferences', JSON.stringify(preferences));
+            };
+
+            // Carregar preferências do localStorage
+            const loadPreferences = () => {
+                const preferences = JSON.parse(localStorage.getItem('preferences'));
+                if (preferences) {
+                    document.getElementById('theme').value = preferences.theme;
+                    document.getElementById('cardStyle').value = preferences.cardStyle;
+                    document.getElementById('enableTransitions').checked = preferences.enableTransitions;
+                    document.getElementById('enableParticles').checked = preferences.enableParticles;
+                    themeManager.applyTheme();
+                    themeManager.applyCardStyle();
+                    themeManager.toggleTransitions();
+                    themeManager.toggleParticles();
+                }
+            };
+
+            // Adicionar eventos para salvar preferências
+            document.getElementById('theme').addEventListener('change', savePreferences);
+            document.getElementById('cardStyle').addEventListener('change', savePreferences);
+            document.getElementById('enableTransitions').addEventListener('change', savePreferences);
+            document.getElementById('enableParticles').addEventListener('change', savePreferences);
+
+            // Carregar preferências ao iniciar
+            loadPreferences();
+        });
+
+        // Controle da Sidebar
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('customizationSidebar');
+            const toggleButton = document.getElementById('toggleSidebar');
+            let isOpen = false;
+
+            // Função para abrir o menu
+            function openSidebar() {
+                sidebar.classList.add('open');
+                isOpen = true;
+                toggleButton.style.right = '340px'; // Move o botão junto com o menu
+            }
+
+            // Função para fechar o menu
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                isOpen = false;
+                toggleButton.style.right = '1rem'; // Retorna o botão à posição original
+            }
+
+            // Toggle do menu
+            toggleButton.addEventListener('click', () => {
+                if (isOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+
+            // Fechar menu ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (isOpen && !sidebar.contains(e.target) && !toggleButton.contains(e.target)) {
+                    closeSidebar();
+                }
+            });
+
+            // Fechar menu ao pressionar ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isOpen) {
+                    closeSidebar();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

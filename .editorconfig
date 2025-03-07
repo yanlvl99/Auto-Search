@@ -1,0 +1,79 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+
+# Python files
+[*.{py,pyi}]
+indent_style = space
+indent_size = 4
+max_line_length = 88
+
+# JavaScript files
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# HTML files
+[*.{html,htm}]
+indent_style = space
+indent_size = 2
+
+# CSS files
+[*.{css,scss,sass,less}]
+indent_style = space
+indent_size = 2
+
+# JSON files
+[*.{json,jsonc}]
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Configuration files
+[*.{ini,cfg,conf}]
+indent_style = space
+indent_size = 4
+
+# Documentation files
+[*.rst]
+indent_style = space
+indent_size = 3
+
+# Shell scripts
+[*.{sh,bash,zsh}]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Windows scripts
+[*.{cmd,bat,ps1}]
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+
+# Makefiles
+[Makefile]
+indent_style = tab
+
+# Git files
+[.git*]
+indent_style = tab
+indent_size = 4 
