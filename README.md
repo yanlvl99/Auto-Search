@@ -15,8 +15,8 @@ Automatize suas pesquisas no Bing de forma inteligente e segura.
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/auto-search.git
-cd auto-search
+git clone https://github.com/yanlvl99/Auto-Search.git
+cd Auto-Search
 ```
 
 2. Execute o arquivo `iniciar.bat`
