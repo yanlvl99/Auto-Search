@@ -1,68 +1,45 @@
-# Auto Search - Automação de Pesquisas Bing
+# Auto Search - Automação Bing
 
-## 📋 Descrição
-Auto Search é uma ferramenta de automação para realizar pesquisas no Bing de forma inteligente e segura. O sistema simula comportamento humano e suporta múltiplos perfis do Microsoft Edge.
+Automatize suas pesquisas no Bing de forma inteligente e segura.
 
-## ✨ Funcionalidades
-- 🔄 Automação de pesquisas no Bing
-- 👥 Suporte a múltiplos perfis do Edge
-- 🎭 Simulação de comportamento humano
-- 📱 Suporte para pesquisas desktop e mobile
-- 🔒 Preservação de login e cookies
-- 🎯 Cliques aleatórios em resultados
-- ⚡ Velocidade de digitação configurável
-- 🕒 Intervalos aleatórios entre pesquisas
+## 📋 Requisitos
 
-## 🚀 Como Usar
-
-### Pré-requisitos
+- Windows 10 ou superior
 - Python 3.8 ou superior
 - Microsoft Edge instalado
-- Pip (gerenciador de pacotes Python)
+- Conta Microsoft (para pontos rewards)
 
-### Instalação no Windows
+## 🚀 Instalação
 
-1. Baixe o arquivo ZIP do projeto
-2. Extraia em uma pasta de sua preferência (exemplo: `C:\Auto Search`)
-3. Dê dois cliques no arquivo `iniciar.bat`
+### Método 1: Com Git
 
-### Configuração do iniciar.bat
-O arquivo `iniciar.bat` é um script que facilita a execução do programa no Windows. Para configurá-lo:
-
-1. Clique com o botão direito no arquivo `iniciar.bat`
-2. Selecione "Editar"
-3. Configure as variáveis conforme necessário:
-```batch
-@echo off
-:: Configurações do ambiente
-set PYTHON_PATH=python
-set VENV_NAME=.venv
-set HOST=localhost
-set PORT=5000
-
-:: Não altere as linhas abaixo a menos que saiba o que está fazendo
-if not exist "%VENV_NAME%" (
-    echo Criando ambiente virtual...
-    %PYTHON_PATH% -m venv %VENV_NAME%
-)
-
-:: Ativa o ambiente virtual
-call %VENV_NAME%\Scripts\activate
-
-:: Instala/atualiza dependências
-pip install -r requirements.txt
-
-:: Inicia a aplicação
-python -m src.auto_search
+1. Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/auto-search.git
+cd auto-search
 ```
 
-### Executando Automaticamente com o Windows
+2. Execute o arquivo `iniciar.bat`
+   - O script irá criar um ambiente virtual
+   - Instalará todas as dependências necessárias
+   - Iniciará o servidor automaticamente
 
-Para fazer o programa iniciar junto com o Windows:
+### Método 2: Sem Git (Download direto)
 
-1. Pressione `Windows + R`
-2. Digite `shell:startup`
-3. Crie um atalho do `iniciar.bat` nesta pasta:
+1. Baixe o projeto:
+   - Acesse a página do projeto no GitHub
+   - Clique no botão verde "Code"
+   - Selecione "Download ZIP"
+   - Extraia o arquivo ZIP para uma pasta de sua preferência
+
+2. Execute o arquivo `iniciar.bat`
+   - O script irá criar um ambiente virtual
+   - Instalará todas as dependências necessárias
+   - Iniciará o servidor automaticamente
+
+### Configuração do Inicialização Automática (Opcional)
+
+1. Crie um atalho do `iniciar.bat` nesta pasta:
    - Clique com botão direito no `iniciar.bat`
    - Selecione "Criar atalho"
    - Mova o atalho para a pasta Startup
