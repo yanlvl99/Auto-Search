@@ -2,6 +2,9 @@ import os
 import time
 import random
 import logging
+import shutil
+import tempfile
+import uuid
 from typing import Optional, Dict, Any
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
@@ -63,11 +66,6 @@ class EdgeAutomation:
         """Configura e inicializa o driver do Edge com configurações anti-detecção"""
         try:
             options = Options()
-            
-            # Cria um diretório temporário para a sessão
-            import tempfile
-            import shutil
-            import uuid
             
             # Gera um ID único para a sessão
             session_id = str(uuid.uuid4())[:8]
@@ -177,8 +175,20 @@ class EdgeAutomation:
         """Limpa o diretório temporário"""
         if hasattr(self, 'temp_dir') and self.temp_dir and os.path.exists(self.temp_dir):
             try:
-                shutil.rmtree(self.temp_dir)
-                logger.info(f"Diretório temporário removido: {self.temp_dir}")
+                # Tenta remover o diretório várias vezes com pequenos intervalos
+                max_attempts = 3
+                for attempt in range(max_attempts):
+                    try:
+                        shutil.rmtree(self.temp_dir, ignore_errors=True)
+                        if not os.path.exists(self.temp_dir):
+                            logger.info(f"Diretório temporário removido: {self.temp_dir}")
+                            break
+                        time.sleep(1)  # Aguarda um pouco antes de tentar novamente
+                    except Exception as e:
+                        if attempt == max_attempts - 1:  # Última tentativa
+                            logger.error(f"Erro ao remover diretório temporário após {max_attempts} tentativas: {str(e)}")
+                        else:
+                            logger.warning(f"Tentativa {attempt + 1} falhou ao remover diretório temporário: {str(e)}")
             except Exception as e:
                 logger.error(f"Erro ao remover diretório temporário: {str(e)}")
                 
