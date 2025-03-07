@@ -20,24 +20,54 @@ Auto Search é uma ferramenta de automação para realizar pesquisas no Bing de 
 - Microsoft Edge instalado
 - Pip (gerenciador de pacotes Python)
 
-### Instalação
-1. Clone o repositório:
-```bash
-git clone [url-do-repositorio]
-cd auto-search
-```
+### Instalação no Windows
 
-2. Instale as dependências:
-```bash
+1. Baixe o arquivo ZIP do projeto
+2. Extraia em uma pasta de sua preferência (exemplo: `C:\Auto Search`)
+3. Dê dois cliques no arquivo `iniciar.bat`
+
+### Configuração do iniciar.bat
+O arquivo `iniciar.bat` é um script que facilita a execução do programa no Windows. Para configurá-lo:
+
+1. Clique com o botão direito no arquivo `iniciar.bat`
+2. Selecione "Editar"
+3. Configure as variáveis conforme necessário:
+```batch
+@echo off
+:: Configurações do ambiente
+set PYTHON_PATH=python
+set VENV_NAME=.venv
+set HOST=localhost
+set PORT=5000
+
+:: Não altere as linhas abaixo a menos que saiba o que está fazendo
+if not exist "%VENV_NAME%" (
+    echo Criando ambiente virtual...
+    %PYTHON_PATH% -m venv %VENV_NAME%
+)
+
+:: Ativa o ambiente virtual
+call %VENV_NAME%\Scripts\activate
+
+:: Instala/atualiza dependências
 pip install -r requirements.txt
-```
 
-3. Execute o aplicativo:
-```bash
+:: Inicia a aplicação
 python -m src.auto_search
 ```
 
-### Configuração
+### Executando Automaticamente com o Windows
+
+Para fazer o programa iniciar junto com o Windows:
+
+1. Pressione `Windows + R`
+2. Digite `shell:startup`
+3. Crie um atalho do `iniciar.bat` nesta pasta:
+   - Clique com botão direito no `iniciar.bat`
+   - Selecione "Criar atalho"
+   - Mova o atalho para a pasta Startup
+
+### Configuração da Interface
 1. Abra o aplicativo no navegador (geralmente em `http://localhost:5000`)
 2. Selecione o perfil do Edge desejado
 3. Configure as opções de automação:
@@ -49,10 +79,16 @@ python -m src.auto_search
 
 ## ⚙️ Configurações Avançadas
 
-### Perfis
-- O sistema detecta automaticamente os perfis do Edge instalados
-- Suporta perfis padrão e personalizados
-- Mantém cookies e dados de login
+### Perfis do Edge
+- Localização padrão dos perfis no Windows:
+  ```
+  C:\Users\[SEU-USUARIO]\AppData\Local\Microsoft\Edge\User Data
+  ```
+- Perfis comuns:
+  - Default (Padrão)
+  - Profile 1
+  - Profile 2
+  - etc.
 
 ### Comportamento
 - Simulação de movimentos do mouse
@@ -69,27 +105,34 @@ python -m src.auto_search
 
 ## 🔍 Solução de Problemas
 
-### Problemas Comuns
-1. **Perfil não carrega**
-   - Verifique se o Edge está fechado
-   - Certifique-se de que o perfil existe
-   - Tente atualizar a lista de perfis
+### Problemas Comuns no Windows
 
-2. **Automação trava**
-   - Clique no botão "Parar"
-   - Aguarde a limpeza dos recursos
-   - Reinicie o aplicativo
+1. **iniciar.bat não funciona**
+   - Verifique se o Python está instalado corretamente
+   - Verifique se o Python está nas variáveis de ambiente do Windows
+   - Execute o comando `python --version` no cmd para confirmar
 
-3. **Conta desconecta**
-   - Verifique se o perfil está corretamente selecionado
-   - Certifique-se de que o Edge não está em uso
-   - Tente fazer login manualmente primeiro
+2. **Perfil não carrega**
+   - Feche TODAS as janelas do Edge
+   - Verifique o Gerenciador de Tarefas e encerre processos do Edge
+   - Certifique-se de que o caminho do perfil está correto
 
-## 📝 Notas
+3. **Erro de permissão**
+   - Execute o iniciar.bat como administrador
+   - Verifique as permissões da pasta do projeto
+   - Certifique-se de que o antivírus não está bloqueando
+
+4. **Porta em uso**
+   - Altere a porta no iniciar.bat (PORT=5000 para outro número)
+   - Verifique se não há outra instância rodando
+   - Feche outros programas que possam usar a mesma porta
+
+## 📝 Notas Importantes
 - Recomenda-se não usar o Edge durante a automação
-- Mantenha o sistema atualizado
+- Mantenha o sistema e o Python atualizados
 - Use intervalos razoáveis entre pesquisas
 - Evite números excessivos de pesquisas
+- Faça backup dos seus perfis do Edge regularmente
 
 ## ⚠️ Aviso Legal
 Este software é para fins educacionais e de automação pessoal. O uso deve estar em conformidade com os termos de serviço do Bing e Microsoft Edge.
