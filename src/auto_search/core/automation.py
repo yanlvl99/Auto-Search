@@ -435,25 +435,12 @@ class EdgeAutomation:
                     except Exception as e:
                         logger.warning(f"Erro ao voltar para janela principal: {str(e)}")
                 
-                # Tenta fechar o navegador normalmente
+                # Tenta fechar apenas a janela atual do navegador
                 try:
                     self.driver.quit()
                     logger.info("Navegador fechado normalmente")
                 except Exception as e:
                     logger.warning(f"Erro ao fechar navegador normalmente: {str(e)}")
-                    # Se falhar, tenta forçar o fechamento
-                    try:
-                        import psutil
-                        # Encontra e mata processos do Edge
-                        for proc in psutil.process_iter(['pid', 'name']):
-                            try:
-                                if 'msedge' in proc.info['name'].lower():
-                                    proc.kill()
-                                    logger.info(f"Processo Edge forçadamente fechado: {proc.info['pid']}")
-                            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                                continue
-                    except Exception as e:
-                        logger.error(f"Erro ao tentar forçar fechamento do Edge: {str(e)}")
                 
             except Exception as e:
                 logger.error(f"Erro durante o processo de parada: {str(e)}")

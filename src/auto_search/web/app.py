@@ -96,11 +96,17 @@ def handle_start_automation(config):
 
 @socketio.on('stop_automation')
 def handle_stop_automation():
-    """Para todas as automações em execução"""
+    """Para a automação em execução"""
     try:
-        for automation in active_automations.values():
-            automation.stop_automation()
-        active_automations.clear()
+        # Cria uma cópia das chaves para evitar erro de modificação durante iteração
+        profiles_to_stop = list(active_automations.keys())
+        
+        for profile in profiles_to_stop:
+            automation = active_automations.get(profile)
+            if automation:
+                automation.stop_automation()
+                del active_automations[profile]
+                
         socketio.emit('log', 'Automação interrompida com sucesso')
     except Exception as e:
         socketio.emit('log', f'Erro ao parar automação: {str(e)}')
