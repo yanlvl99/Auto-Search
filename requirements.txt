@@ -7,4 +7,4 @@ webdriver-manager==4.0.1
 python-dotenv==1.0.1
 eventlet==0.35.2
 gevent-websocket==0.10.1
-faker==19.13.0
+sentence-transformers==2.5.1

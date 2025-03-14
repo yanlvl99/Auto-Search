@@ -371,29 +371,63 @@ class EdgeAutomation:
             termos_usados = set()
 
             while searches_completed < search_count and self.is_running:
-                # Seleciona termo de pesquisa aleatório
-                # Usa o Faker para gerar um termo de pesquisa aleatório mais realista
-                from faker import Faker
+                # Gera uma pergunta natural usando templates
                 import random
                 from ..config.settings import SEARCH_TERMS
-                search_term = ""
-                
-                fake = Faker('pt_BR')
-                # Garantindo que as palavras sejam diferentes
-                palavra1 = fake.word()
-                palavra2 = fake.word()
-                search_term = palavra1 + " " + palavra2
+
+                # Templates de perguntas comuns
+                templates_perguntas = [
+                    "Como fazer {}?",
+                    "Qual é a melhor maneira de {}?",
+                    "O que significa {}?",
+                    "Onde encontrar {}?",
+                    "Quais são os benefícios de {}?",
+                    "Por que {} acontece?",
+                    "Quando devo {}?",
+                    "Como funciona {}?",
+                    "Qual a diferença entre {} e {}?",
+                    "Como resolver problemas com {}?"
+                ]
+
+                # Tópicos comuns para gerar perguntas relevantes
+                topicos = [
+                    "exercícios", "meditação", "alimentação saudável", "sono", "produtividade",
+                    "estudo", "trabalho remoto", "investimentos", "programação", "idiomas",
+                    "jardinagem", "culinária", "fotografia", "música", "arte",
+                    "viagem", "tecnologia", "saúde", "bem-estar", "sustentabilidade",
+                    "reciclagem", "energia renovável", "marketing digital", "redes sociais",
+                    "desenvolvimento pessoal", "carreira", "finanças pessoais", "decoração",
+                    "organização", "limpeza", "manutenção", "consertos", "DIY"
+                ]
+
+                # Gera uma pergunta aleatória
+                if random.random() > 0.3 and SEARCH_TERMS:  # 30% de chance de usar termos personalizados
+                    search_term = random.choice(SEARCH_TERMS)
+                else:
+                    template = random.choice(templates_perguntas)
+                    if "{}" in template:
+                        if template.count("{}") == 2:
+                            # Para templates que precisam de dois tópicos
+                            topicos_selecionados = random.sample(topicos, 2)
+                            search_term = template.format(topicos_selecionados[0], topicos_selecionados[1])
+                        else:
+                            # Para templates que precisam de um tópico
+                            topico = random.choice(topicos)
+                            search_term = template.format(topico)
                 
                 # Se o termo já foi usado, gerar outro
                 while search_term in termos_usados:
-                    if SEARCH_TERMS and random.random() > 0.5:
+                    if random.random() > 0.3 and SEARCH_TERMS:
                         search_term = random.choice(SEARCH_TERMS)
                     else:
-                        palavra1 = fake.word()
-                        palavra2 = fake.word()
-                        while palavra1 == palavra2:
-                            palavra2 = fake.word()
-                        search_term = palavra1 + " " + palavra2
+                        template = random.choice(templates_perguntas)
+                        if "{}" in template:
+                            if template.count("{}") == 2:
+                                topicos_selecionados = random.sample(topicos, 2)
+                                search_term = template.format(topicos_selecionados[0], topicos_selecionados[1])
+                            else:
+                                topico = random.choice(topicos)
+                                search_term = template.format(topico)
                 
                 termos_usados.add(search_term)
                 
